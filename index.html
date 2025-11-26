@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mayor Manda — Juego</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700;900&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg-dark:#0b0206;
+      --vino-600:#5b0427;
+      --vino-400:#8b0e45;
+      --gold:#cfa46b;
+      --accent:#ff5aa2;
+      --glass: rgba(255,255,255,0.04);
+      --card: rgba(255,255,255,0.03);
+      --text: #f6f2f5;
+      --muted: rgba(246,242,245,0.6);
+      --success: #4ade80;
+      --danger: #ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;background:radial-gradient(1000px 500px at 10% 10%, rgba(139,14,69,0.18), transparent), linear-gradient(180deg,var(--bg-dark), #12030a 60%);font-family:Montserrat, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;color:var(--text);margin:0}
+    a{color:inherit}
+    .app{max-width:1100px;margin:28px auto;padding:28px;border-radius:18px;background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);box-shadow: 0 10px 40px rgba(0,0,0,0.6);overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+
+    header{display:flex;align-items:center;gap:18px}
+    .logo{display:flex;align-items:center;gap:12px}
+    .dice-ico{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--vino-600),var(--vino-400));display:flex;align-items:center;justify-content:center;font-weight:900;color:var(--gold);box-shadow:0 6px 18px rgba(139,14,69,0.45);}
+    h1{font-family:'Playfair Display', serif;margin:0;font-size:26px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:22px;margin-top:22px}
+
+    /* Left panel menu */
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));padding:18px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+    .menu-btn{display:block;width:100%;padding:12px 14px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--vino-400),var(--vino-600));color:var(--gold);font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(139,14,69,0.25);margin-bottom:12px}
+    .small{font-size:13px;color:var(--muted)}
+
+    .setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 8px;border-radius:8px;background:var(--card);margin-top:10px}
+    .setting-row label{font-size:14px}
+    .spinner{display:flex;gap:8px;align-items:center}
+    .spinner button{width:36px;height:36px;border-radius:8px;border:none;background:rgba(255,255,255,0.04);color:var(--text);font-weight:700;cursor:pointer}
+    .value{min-width:36px;text-align:center}
+
+    /* Right panel game area */
+    .arena{padding:18px;border-radius:12px;min-height:440px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.02));border:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:12px}
+
+    .players{display:flex;gap:12px}
+    .player{flex:1;padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border:1px solid rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:8px}
+    .player h3{margin:0;font-size:15px}
+    .stat{display:flex;align-items:center;gap:8px}
+    .garment{background:var(--glass);padding:6px 10px;border-radius:999px;font-size:13px}
+
+    .center-actions{display:flex;align-items:center;justify-content:center;padding:12px;background:linear-gradient(90deg, rgba(139,14,69,0.08), rgba(139,14,69,0.03));border-radius:10px}
+    .btn{padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(90deg,var(--accent),var(--vino-400));color:white;font-weight:700;cursor:pointer;box-shadow:0 10px 30px rgba(139,14,69,0.18)}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);box-shadow:none}
+
+    .dice-row{display:flex;gap:12px;align-items:center}
+    .dice{width:90px;height:90px;border-radius:12px;background:linear-gradient(180deg,#1b0a10,rgba(139,14,69,0.3));display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:var(--gold);box-shadow:0 12px 30px rgba(11,2,6,0.6)}
+    .roll-anim{animation: shake 700ms cubic-bezier(.36,.07,.19,.97) infinite}
+    @keyframes shake{0%{transform:translateY(0) rotate(0deg)}25%{transform:translateY(-6px) rotate(-6deg)}50%{transform:translateY(0) rotate(6deg)}75%{transform:translateY(-4px) rotate(-3deg)}100%{transform:translateY(0) rotate(0deg)}}
+
+    .log{padding:10px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:10px;min-height:86px;color:var(--muted);font-size:14px}
+
+    footer.controls{display:flex;gap:12px;align-items:center;justify-content:space-between}
+
+    /* Modal */
+    .modal-backdrop{position:fixed;inset:0;background:linear-gradient(180deg, rgba(11,2,6,0.6), rgba(11,2,6,0.9));display:none;align-items:center;justify-content:center;z-index:60}
+    .modal{width:min(820px,94%);background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:18px;border-radius:14px;border:1px solid rgba(255,255,255,0.03)}
+    .modal h2{margin:0 0 6px 0}
+    .rules{font-size:14px;color:var(--muted);line-height:1.5}
+    .close{background:transparent;border:none;color:var(--muted);cursor:pointer}
+
+    /* small screens */
+    @media (max-width:900px){.grid{grid-template-columns:1fr;}.dice{width:72px;height:72px;font-size:26px}}
+
+    /* micro styles */
+    .pill{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.02);font-weight:700}
+    .choice-row{display:flex;gap:8px}
+    .choice{padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+
+  </style>
+</head>
+<body>
+  <div class="app" role="application">
+    <header>
+      <div class="logo">
+        <div class="dice-ico">🎲</div>
+      </div>
+      <div>
+        <h1>Mayor Manda</h1>
+        <p class="lead">Juego interactivo — estilo: exy elegante · Vino, negro y dorado</p>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="pill">Versión: 1.0</div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <aside class="panel">
+        <button class="menu-btn" id="viewRules">Ver reglas</button>
+        <button class="menu-btn" id="startBtn">Comenzar partida</button>
+
+        <div style="margin-top:12px">
+          <div class="small">Configuración</div>
+          <div class="setting-row" style="margin-top:8px">
+            <label>Prendas por jugador</label>
+            <div class="spinner">
+              <button id="decGar">-</button>
+              <div class="value" id="garCount">3</div>
+              <button id="incGar">+</button>
+            </div>
+          </div>
+
+          <div class="setting-row">
+            <label>Shots máximos (por evento)</label>
+            <div class="spinner">
+              <button id="decShot">-</button>
+              <div class="value" id="shotCount">2</div>
+              <button id="incShot">+</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" class="small">Opciones adicionales</div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-direction:column">
+            <label class="choice-row"><input type="checkbox" id="tieBothShot" checked> <span style="margin-left:8px;color:var(--muted)">Empate → Ambos toman shot</span></label>
+            <label class="choice-row"><input type="checkbox" id="sixPower" checked> <span style="margin-left:8px;color:var(--muted)">Poder del 6 (quien saque 6 elige la opción)</span></label>
+          </div>
+
+        </div>
+
+        <div style="margin-top:20px;color:var(--muted);font-size:13px">Consejo: ajusta las prendas y shots antes de comenzar. Si una persona llega a 0 prendas, al elegir "quitarse" pasará a un reto suave.</div>
+      </aside>
+
+      <main class="arena">
+        <div class="players">
+          <div class="player" id="playerA">
+            <h3>Jugador A <span class="pill" id="nameA">Tú</span></h3>
+            <div class="stat">Prendas: <div style="margin-left:8px" class="garment" id="garA">3</div></div>
+            <div class="stat">Último tiro: <strong id="lastA">-</strong></div>
+          </div>
+
+          <div class="player" id="playerB">
+            <h3>Jugador B <span class="pill" id="nameB">Pareja</span></h3>
+            <div class="stat">Prendas: <div style="margin-left:8px" class="garment" id="garB">3</div></div>
+            <div class="stat">Último tiro: <strong id="lastB">-</strong></div>
+          </div>
+        </div>
+
+        <div class="center-actions">
+          <div style="display:flex;align-items:center;gap:14px">
+            <div class="dice-row">
+              <div class="dice" id="diceA">-</div>
+              <div class="dice" id="diceB">-</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn" id="rollBtn">Lanzar dados</button>
+              <button class="btn ghost" id="nextRound" style="display:none">Siguiente ronda</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="log" id="log">Bienvenido a Mayor Manda. Presiona "Comenzar partida" para iniciar o "Ver reglas" para leerlas.</div>
+
+        <footer class="controls">
+          <div style="display:flex;gap:8px">
+            <button class="btn ghost" id="resetBtn">Reiniciar partida</button>
+            <button class="btn ghost" id="swapBtn">Intercambiar rol (A/B)</button>
+          </div>
+          <div style="color:var(--muted);font-size:13px">Status: <span id="status">Esperando</span></div>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2>Reglas principales</h2>
+        <button class="close" id="closeModal">✕</button>
+      </div>
+      <div class="rules">
+        <ol>
+          <li>Ambos tienen un dado.</li>
+          <li>Los dos lanzan el dado al mismo tiempo.</li>
+          <li>Quien saque el número más alto, gana la ronda.</li>
+          <li>El ganador le hace a su pareja la pregunta: «¿Qué prefieres: quitarte una prenda, verdad o shot?»</li>
+          <li>La persona que perdió debe elegir una de las tres opciones y cumplirla.</li>
+        </ol>
+
+        <h3>Opciones</h3>
+        <p><strong>Quitarse una prenda</strong><br>Puede ser cualquier prenda (incluyendo accesorios). Si se queda sin prendas, esta opción cambia a "hacer un reto suave".</p>
+        <p><strong>Verdad</strong><br>El ganador hace una pregunta del nivel acordado (suave, romántica, pícara o atrevida).</p>
+        <p><strong>Shot</strong><br>Un traguito de vino. Puedes limitarlo a 1 o 2 máximos para que no se pase.</p>
+
+        <h3>Reglas opcionales</h3>
+        <ul>
+          <li><strong>Empate:</strong> Si los dos sacan el mismo número, ambos hacen un shot o ambos se quitan una prenda (según la configuración).</li>
+          <li><strong>Poder del 6:</strong> Si alguien saca 6, el jugador que la haya sacado (o ambos si la sacan) puede elegir la opción que quiera.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Estado del juego ---
+    const state = {
+      garA: 3,
+      garB: 3,
+      shotsMax: 2,
+      tieBothShot: true,
+      sixPower: true,
+      running: false,
+      lastWinner: null
+    }
+
+    // --- Elementos ---
+    const garAEl = document.getElementById('garA');
+    const garBEl = document.getElementById('garB');
+    const garCountEl = document.getElementById('garCount');
+    const shotCountEl = document.getElementById('shotCount');
+    const rollBtn = document.getElementById('rollBtn');
+    const diceA = document.getElementById('diceA');
+    const diceB = document.getElementById('diceB');
+    const log = document.getElementById('log');
+    const startBtn = document.getElementById('startBtn');
+    const viewRules = document.getElementById('viewRules');
+    const modal = document.getElementById('modal');
+    const closeModal = document.getElementById('closeModal');
+    const status = document.getElementById('status');
+    const nextRound = document.getElementById('nextRound');
+    const resetBtn = document.getElementById('resetBtn');
+    const swapBtn = document.getElementById('swapBtn');
+
+    // settings
+    document.getElementById('incGar').addEventListener('click',()=>updateGarCount(1));
+    document.getElementById('decGar').addEventListener('click',()=>updateGarCount(-1));
+    document.getElementById('incShot').addEventListener('click',()=>updateShotCount(1));
+    document.getElementById('decShot').addEventListener('click',()=>updateShotCount(-1));
+
+    document.getElementById('tieBothShot').addEventListener('change', (e)=>{state.tieBothShot = e.target.checked});
+    document.getElementById('sixPower').addEventListener('change', (e)=>{state.sixPower = e.target.checked});
+
+    function updateGarCount(delta){
+      let v = parseInt(garCountEl.textContent) + delta;
+      if(v<0) v=0; if(v>10) v=10;
+      garCountEl.textContent = v;
+      state.garA = v; state.garB = v;
+      refreshGars();
+    }
+    function updateShotCount(delta){
+      let v = parseInt(shotCountEl.textContent) + delta;
+      if(v<1) v=1; if(v>5) v=5;
+      shotCountEl.textContent = v;
+      state.shotsMax = v;
+    }
+
+    // --- Preguntas (verdad) ---
+    const truthQuestions = [
+      '¿Cuál ha sido tu peor cita y por qué?',
+      '¿Tienes algún crush secreto actualmente?',
+      '¿Qué es lo más atrevido que has hecho por amor?',
+      'Describe tu beso perfecto en 3 palabras.',
+      '¿Alguna vez has fingido estar enamorado/a?',
+      '¿Cuál es tu fantasía romántica más simple?',
+      '¿Qué parte de mi cuerpo te llama más la atención?',
+      '¿Cuál es tu recuerdo más vergonzoso con una pareja?',
+      '¿Has tenido una aventura de una noche?',
+      '¿Qué harías si te quedas sin ropa en una cita sorpresa?',
+      '¿Cuál es tu palabra o gesto que más te enciende?',
+      '¿Alguna vez rompiste el corazón de alguien sin querer?',
+      '¿Qué prefieres: una cita casera o una noche fuera?',
+      '¿Cuál es el lugar más extraño donde te gustaría besar?',
+      '¿Tienes alguna práctica extraña que te guste en pareja?',
+      '¿Qué secreto nunca le has dicho a nadie?',
+      '¿Cuál es tu canción favorita para un momento romántico?',
+      '¿Te gustaría probar un juego de roles? ¿Cuál?',
+      '¿Qué piensas cuando me miras a los ojos?',
+      'Si pudieras describir tu ideal en una película, cuál sería?'
+    ];
+
+    // util
+    function rnd(min,max){return Math.floor(Math.random()*(max-min+1))+min}
+    function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+    // refresh UI
+    function refreshGars(){garAEl.textContent = state.garA; garBEl.textContent = state.garB}
+    refreshGars();
+
+    // --- events ---
+    viewRules.addEventListener('click', ()=>{modal.style.display='flex'})
+    closeModal.addEventListener('click', ()=>{modal.style.display='none'})
+    modal.addEventListener('click',(e)=>{if(e.target===modal) modal.style.display='none'})
+
+    startBtn.addEventListener('click', ()=>{
+      state.running = true;
+      state.garA = parseInt(garCountEl.textContent);
+      state.garB = parseInt(garCountEl.textContent);
+      state.shotsMax = parseInt(shotCountEl.textContent);
+      status.textContent = 'En juego';
+      log.textContent = 'Partida iniciada. Ajusta la configuración si lo necesitas. Presiona "Lanzar dados".';
+      refreshGars();
+    })
+
+    resetBtn.addEventListener('click', ()=>{
+      state.running = false; state.garA = parseInt(garCountEl.textContent); state.garB = parseInt(garCountEl.textContent);
+      diceA.textContent='-'; diceB.textContent='-'; document.getElementById('lastA').textContent='-'; document.getElementById('lastB').textContent='-'; status.textContent='Reiniciado'; log.textContent='Partida reiniciada.'; refreshGars();
+    })
+
+    swapBtn.addEventListener('click', ()=>{
+      // swap names and garments
+      [state.garA, state.garB] = [state.garB, state.garA]; refreshGars(); log.textContent='Roles intercambiados.';
+    })
+
+    rollBtn.addEventListener('click', async ()=>{
+      if(!state.running){log.textContent='Inicia la partida primero con "Comenzar partida".'; return}
+      rollBtn.disabled = true; rollBtn.classList.add('loading');
+      diceA.classList.add('roll-anim'); diceB.classList.add('roll-anim');
+
+      // animar unos ms
+      await sleep(900);
+      diceA.classList.remove('roll-anim'); diceB.classList.remove('roll-anim');
+
+      const a = rnd(1,6); const b = rnd(1,6);
+      diceA.textContent = a; diceB.textContent = b;
+      document.getElementById('lastA').textContent = a; document.getElementById('lastB').textContent = b;
+
+      // logica de resultado
+      if(a===b){
+        // empate
+        log.textContent = `Empate: ambos sacaron ${a}.`;
+        if(state.tieBothShot){
+          const shots = rnd(1, state.shotsMax);
+          log.textContent += ` Ambos deben tomar ${shots} shot(s).`;
+        } else {
+          log.textContent += ' Ambos deben quitarse una prenda.';
+          applyGarmentLoss('both');
+        }
+        status.textContent = 'Empate';
+      } else {
+        // comprobar poder del 6
+        let winner = a>b? 'A':'B';
+        let winnerVal = Math.max(a,b);
+        if(state.sixPower && (a===6 || b===6)){
+          // quien saco 6 elige
+          winner = a===6 && b!==6 ? 'A' : b===6 && a!==6 ? 'B' : winner;
+          // if both have 6, keep normal higher decides (both 6 equal handled above)
+        }
+
+        const loser = winner==='A'?'B':'A';
+        state.lastWinner = winner;
+        // preguntar al ganador la opcion (simulamos con modal de opciones)
+        await promptWinnerChoice(winner, winnerVal);
+        status.textContent = `Último ganador: Jugador ${winner}`;
+      }
+
+      rollBtn.disabled = false; rollBtn.classList.remove('loading');
+    })
+
+    async function promptWinnerChoice(winner, winnerVal){
+      // show choice modal using prompt-like UI
+      const choice = await showChoiceModal(winner);
+      if(!choice) { log.textContent += ' (Sin acción)'; return }
+
+      if(choice==='quit'){ applyGarmentLoss(winner); }
+      else if(choice==='truth'){ // dar pregunta aleatoria
+        const q = truthQuestions[rnd(0, truthQuestions.length-1)];
+        log.textContent = `Jugador ${winner} eligió VERDAD. Pregunta: ${q}`;
+      } else if(choice==='shot'){
+        const shots = rnd(1, state.shotsMax);
+        log.textContent = `Jugador ${winner} eligió SHOT. El perdedor debe tomar ${shots} shot(s) (máx ${state.shotsMax}).`;
+      }
+
+      // revisar si alguien llegó a cero
+      if(state.garA<=0 || state.garB<=0){
+        const target = state.garA<=0? 'A': 'B';
+        log.textContent += ` Jugador ${target} quedó sin prendas — ahora sus "quitarse" pasan a reto suave.`;
+      }
+    }
+
+    function applyGarmentLoss(target){
+      if(target==='A'){ if(state.garA>0) state.garA--; }
+      else if(target==='B'){ if(state.garB>0) state.garB--; }
+      else if(target==='both'){ if(state.garA>0) state.garA--; if(state.garB>0) state.garB--; }
+      refreshGars();
+    }
+
+    // --- Modal choice implementation ---
+    function showChoiceModal(winner){
+      return new Promise((resolve)=>{
+        // build temporary modal
+        const wrapper = document.createElement('div'); wrapper.style.position='fixed'; wrapper.style.inset=0; wrapper.style.display='flex'; wrapper.style.alignItems='center'; wrapper.style.justifyContent='center'; wrapper.style.zIndex=120;
+        wrapper.style.background = 'linear-gradient(180deg, rgba(11,2,6,0.6), rgba(11,2,6,0.85))';
+        const card = document.createElement('div'); card.style.width='min(720px,94%)'; card.style.padding='18px'; card.style.borderRadius='12px'; card.style.background='linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))'; card.style.border='1px solid rgba(255,255,255,0.03)';
+        const title = document.createElement('h3'); title.textContent = `Jugador ${winner} — Elige: quitarse / verdad / shot`; title.style.margin='0 0 8px 0';
+        const desc = document.createElement('div'); desc.style.color='var(--muted)'; desc.style.marginBottom='12px'; desc.textContent = 'El ganador decide cuál opción debe cumplir el perdedor.';
+        const row = document.createElement('div'); row.style.display='flex'; row.style.gap='8px';
+        const btnQuit = document.createElement('button'); btnQuit.className='btn'; btnQuit.textContent='Quitarse una prenda';
+        const btnTruth = document.createElement('button'); btnTruth.className='btn ghost'; btnTruth.textContent='Verdad (pregunta aleatoria)';
+        const btnShot = document.createElement('button'); btnShot.className='btn'; btnShot.textContent='Shot';
+        btnShot.style.background = 'linear-gradient(90deg,#8b0e45,#5b0427)';
+
+        // append
+        row.appendChild(btnQuit); row.appendChild(btnTruth); row.appendChild(btnShot);
+        card.appendChild(title); card.appendChild(desc); card.appendChild(row);
+        wrapper.appendChild(card); document.body.appendChild(wrapper);
+
+        const cleanup = (res)=>{ document.body.removeChild(wrapper); resolve(res); };
+        btnQuit.addEventListener('click', ()=>cleanup('quit'));
+        btnTruth.addEventListener('click', ()=>cleanup('truth'));
+        btnShot.addEventListener('click', ()=>cleanup('shot'));
+
+        // timeout auto choose (si nadie responde en 20s)
+        setTimeout(()=>{ if(document.body.contains(wrapper)){ const auto = ['quit','truth','shot'][rnd(0,2)]; cleanup(auto); } },20000);
+      })
+    }
+
+    // small helper to ensure modal theme colors
+    (function themeHelper(){
+      // apply css vars to dynamic elements used in modals
+      const styleNode = document.createElement('style');
+      styleNode.textContent = `.btn{font-family:inherit}.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}`;
+      document.head.appendChild(styleNode);
+    })();
+
+  </script>
+</body>
+</html>
+
